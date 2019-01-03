@@ -78,7 +78,7 @@ exports["uncons'"] = [](const boxed& empty_) -> boxed {
 //-- |
 //foreign import take :: forall a. Int -> Array a -> Array a
 exports["take"] = [](const boxed& n_) -> boxed {
-  const auto n = unbox<int>(n_);
+  const auto n = std::max(unbox<int>(n_), 0);
   return [=](const boxed& xs_) -> boxed {
     const auto& xs = unbox<array_t>(xs_);
     const long long size = xs.size();
@@ -88,6 +88,18 @@ exports["take"] = [](const boxed& n_) -> boxed {
     return array_t(xs.cbegin(), xs.cbegin() + _n);
   };
 };
+
+//-- | Drop a number of elements from the start of an array, creating a new array.
+//foreign import drop :: forall a. Int -> Array a -> Array a
+exports["drop"] = [](const boxed& n_) -> boxed {
+  const auto n = unbox<int>(n_);
+  return [=](const boxed& xs_) -> boxed {
+    const auto& xs = unbox<array_t>(xs_);
+    const auto l = xs.size();
+    return n <= 0 ? xs : n >= l ? array_t() : array_t(xs.cbegin()+n, xs.cend());
+  };
+};
+
 // foreign import zipWith
 //   :: forall a b c
 //    . (a -> b -> c)
@@ -110,6 +122,25 @@ exports["zipWith"] = [](const boxed& f_) -> boxed {
     return result;
   };
   };
+};
+
+//-- | Flatten an array of arrays, creating a new array.
+//-- |
+//-- | ```purescript
+//-- | concat [[1, 2, 3], [], [4, 5, 6]] = [1, 2, 3, 4, 5, 6]
+//-- | ```
+//-- |
+//foreign import concat :: forall a. Array (Array a) -> Array a
+exports["concat"] = [](const boxed& xss_) -> boxed {
+  array_t xss = unbox<array_t>(xss_);
+  array_t result;
+  for (auto it = xss.cbegin(), end = xss.cend(); it != end; it++) {
+    const array_t& xs = unbox<array_t>(*it);
+    for (auto iit = xs.cbegin(), iend = xs.cend(); iit != iend; iit++) {
+      result.emplace_back(*iit);
+    }
+  }
+  return result;
 };
 
 //index = indexImpl Just Nothing
@@ -145,6 +176,32 @@ exports["copyImpl"] = [](const boxed& xs_) -> boxed {
   };
 };
 
+//-- | Create an empty mutable array.
+//foreign import empty :: forall h a. ST h (STArray h a)
+exports["empty"] = []() -> boxed {
+    return array_t();
+};
+
+//-- | Append the values in an immutable array to the end of a mutable array.
+//-- | Returns the new length of the mutable array.
+//foreign import pushAll
+//  :: forall h a
+//   . Array a
+//  -> STArray h a
+//  -> ST h Int
+exports["pushAll"] = [](const boxed& as_) -> boxed {
+  const auto& as = unbox<array_t>(as_);
+  return [=](const boxed& sas_) -> boxed {
+    const auto& sas = unbox<array_t>(sas_);
+    array_t& ssas = const_cast<array_t&>(static_cast<const array_t&>(sas));
+    ssas.insert(ssas.end(), as.cbegin(), as.cend());
+    auto s = static_cast<int>(ssas.size());
+    assert(s <= std::numeric_limits<int>::max());
+    return [=]() -> boxed {
+      return s;
+    };
+  };
+};
 
 //-- | Read the value at the specified index in a mutable array.
 //peek :: forall h a . Int -> STArray h a -> ST h (Maybe a)
