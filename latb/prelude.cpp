@@ -10,6 +10,27 @@ exports["unsafeLog"] = [](const boxed& s_) -> boxed {
   return s;
 };
 FOREIGN_END
+
+FOREIGN_BEGIN( Control_Bind )
+
+// foreign import arrayBind :: forall a b. Array a -> (a -> Array b) -> Array b
+exports["arrayBind"] = [](const boxed& xs_) -> boxed {
+  const auto& xs = unbox<array_t>(xs_);
+  return [=](const boxed& f_) -> boxed {
+    array_t result;
+    for (auto it = xs.cbegin(), end = xs.cend(); it != end; it++) {
+      auto ys_ = unbox<array_t>(f_(*it));
+      const array_t& ys = ys_;
+      for (auto iit = ys.begin(), iend = ys.end(); iit != iend; iit++) {
+        result.emplace_back(std::move(*iit));
+      }
+    }
+    return result;
+  };
+};
+
+FOREIGN_END
+
 FOREIGN_BEGIN( Record_Unsafe )
 
 //-- | Unsafely gets a value from a record, using a string for the key.
