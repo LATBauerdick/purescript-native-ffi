@@ -19,5 +19,7 @@ exports["isFinite"] = [](const boxed& x) -> boxed {
   return isfinite(unbox<double>(x));
 };
 
+exports["infinity"] = std::numeric_limits<double>::infinity();
+
 FOREIGN_END
 
