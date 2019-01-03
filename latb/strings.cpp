@@ -2,6 +2,7 @@
 #include <locale>
 #include <codecvt>
 #include <regex>
+#include <sstream>
 #include <iostream>
 
 #include <purescript.h>
@@ -25,6 +26,15 @@ exports["replace"] = [](const boxed& s1) -> boxed {
 
 FOREIGN_END
 
+FOREIGN_BEGIN( Data_Char )
+
+// foreign import toCharCode :: Char -> Int
+exports["toCharCode"] = [](const boxed& c_) -> boxed {
+  const int i = unbox<string>(c_)[0];
+  return i;
+};
+
+FOREIGN_END
 
 FOREIGN_BEGIN( Data_String_CodeUnits )
 
@@ -49,14 +59,8 @@ exports["singleton"] = [](const boxed& c_) -> boxed {
 exports["toCharArray"] = [](const boxed& s_) -> boxed {
   array_t cs;
   const string& s = unbox<string>(s_);
-  /* const auto utf32 = utf32conv.from_bytes(s); */
-  /* auto it = utf32.cbegin(); */
-  /* auto end = utf32.cend(); */
-  /* for (; it != end; it++) { */
-  /*   cs.emplace_back(*it); */
-  /* }; */
   for (char c : s) {
-    cs.emplace_back(c);
+    cs.emplace_back(boxed(string(1,c)));
   };
   return cs;
 };
@@ -65,13 +69,11 @@ exports["toCharArray"] = [](const boxed& s_) -> boxed {
 //
 exports["fromCharArray"] = [](const boxed& xs_) -> boxed {
     array_t xs = unbox<array_t>(xs_);
-    std::u32string utf32;
-    utf32.reserve(xs.size());
+    std::stringstream result;
     for (auto it = xs.cbegin(), end = xs.cend(); it != end; it++) {
-      utf32.push_back(unbox<char>(*it));
+      result << unbox<string>(*it);
     }
-    return utf32conv.to_bytes(utf32);
-    /* return "test"; */
+    return result.str();
 };
 
 // foreign import drop :: Int -> String -> String
@@ -83,6 +85,19 @@ exports["drop"] = [](const boxed& n_) -> boxed {
     return n <= 0 ? s : n >= s.size() ? "" : s.substr(n);
   };
 };
+
+// -- Returns the first `n` characters of the string.
+// foreign import take :: Int -> String -> String
+exports["take"] = [](const boxed& n_) -> boxed {
+  return [=](const boxed& s_) -> boxed {
+    const string& s = unbox<string>(s_);
+    auto n = std::max(unbox<int>(n_), 0);
+    auto l = s.size();
+    return n >= l ? s : (n < 1 ? string("") : s.substr(0, n));
+  };
+};
+
+
 
 // foreign import countPrefix :: (Char -> Boolean) ->  String -> Int
 //
@@ -125,82 +140,3 @@ exports["_indexOf"] = [](const boxed& just_) -> boxed {
 /*   return purs_any_app(just, purs_any_int_new(found-s)); */
 
 FOREIGN_END
-
-
-/* PURS_FFI_FUNC_1(Data_String_CodeUnits_length, x, { */
-/*     return purs_any_int_new(strlen( purs_any_get_string(x))); */
-/* }); */
-
-/* PURS_FFI_FUNC_1(Data_String_CodeUnits_fromCharArray, xs, { */
-/*   const purs_vec_t * zs = purs_any_get_array(xs); */
-/*   const purs_any_t * tmp; */
-/*   int i; */
-/*   const int mxbytes = 4; // ???? I have no idea... */
-/*   char * out = (char *) malloc(mxbytes*(zs->length) + 1); */
-/*   out[0] = '\0'; */
-/*   char * s = (char *) malloc(mxbytes + 1); */
-/*   purs_vec_foreach(zs, tmp, i) { */
-/*     utf8_int32_t chr = purs_any_get_char(tmp); */
-/*     size_t bytes = utf8codepointsize(chr); */
-/*     utf8catcodepoint(s, chr, bytes); */
-/*     s[bytes + 1] = '\0'; */
-/*     strcat(out, s); */
-/*   } */
-/*   free(s); */
-/*   return purs_any_string_new(out); */
-/* }); */
-
-/* PURS_FFI_FUNC_1(Data_String_CodeUnits_toCharArray, s, { */
-/*   const char * ts = purs_any_get_string(s); */
-/*   const purs_any_int_t count = strlen(ts); */
-/*   purs_vec_t * result = (purs_vec_t *) purs_vec_new(); */
-/*   for (purs_any_int_t i = 0; i < count; i++) { */
-/*     char c = ts[i]; */
-/*     purs_vec_push_mut(result, purs_any_char_new(c)); */
-/*   } */
-/*   return purs_any_array_new(result); */
-/* }); */
-
-/* PURS_FFI_FUNC_1(Data_String_CodeUnits_singleton, c, { */
-/*   const int mxbytes = 4; // ???? I have no idea... */
-/*   char * s = (char *) malloc(mxbytes + 1); */
-/*   utf8_int32_t chr = purs_any_get_char(c); */
-/*   size_t bytes = utf8codepointsize(chr); */
-/*   utf8catcodepoint(s, chr, bytes); */
-/*   s[bytes + 1] = '\0'; */
-/*   return purs_any_string_new(s); */
-/* }); */
-
-/* PURS_FFI_FUNC_2(Data_String_CodeUnits_drop, n0, s0, { //??? does not work with unicode chars */
-/*   size_t n = purs_any_get_int(n0); */
-/*   if (n <= 0) return s0; //???? not sure this is ok re/ memory allocation etc? */
-/*   const char * s = purs_any_get_string(s0); */
-/*   size_t sl = strlen(s); */
-/*   if (n >= sl) return purs_any_string_new(""); */
-/*   size_t srl = sl-n; */
-/*   char * sr = (char *) malloc(srl + 1); */
-/*   strlcpy(sr, s+n, srl+1); // strlcpy makes sure there's a null character at the end */
-/*   const purs_any_t * out = purs_any_string_new(sr); */
-/*   free(sr); */
-/*   return out; */
-/* }); */
-
-/* PURS_FFI_FUNC_2(Data_String_CodeUnits_countPrefix, f, s0, { // only works with ASCII... */
-/*  // foreign import countPrefix :: (Char -> Boolean) ->  String -> Int */
-/*   const char * s = purs_any_get_string(s0); */
-/*   int i = 0; */
-/*   while ( i<strlen(s) && purs_any_is_true(purs_any_app(f, purs_any_char_new(s[i])))) { */
-/*     i++; */
-/*   } */
-/*   return purs_any_int_new(i); */
-/* }); */
-
-/* PURS_FFI_FUNC_4(Data_String_CodeUnits__indexOf, just, nothing, p0, s0, { // only works with ASCII... */
-/* // foreign import _indexOf :: (forall a. a -> Maybe a) -> (forall a. Maybe a) -> Pattern -> String -> Maybe Int */
-/*   const char * p = purs_any_get_string(p0); */
-/*   const char * s = purs_any_get_string(s0); */
-/*   const char * found = strstr(s, p); */
-/*   if (!found) return nothing; */
-/*   return purs_any_app(just, purs_any_int_new(found-s)); */
-/* }); */
-
