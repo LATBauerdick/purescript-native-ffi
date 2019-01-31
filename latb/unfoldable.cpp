@@ -13,6 +13,7 @@ FOREIGN_BEGIN( Data_Unfoldable )
 //   -> b
 //   -> Array a
 //
+// unfoldr = unfoldrArrayImpl isNothing (unsafePartial fromJust) fst snd
 exports["unfoldrArrayImpl"] =
           [](const boxed& isNothing_) -> boxed {
   return [=](const boxed& fromJust_) -> boxed {
@@ -24,7 +25,7 @@ exports["unfoldrArrayImpl"] =
   auto b = b_;
   while (true) {
     const auto maybe = f_(b);
-    if (isNothing_(maybe)) {
+    if (unbox<bool>(isNothing_(maybe))) {
       return result;
     }
     const auto tuple = fromJust_(maybe);

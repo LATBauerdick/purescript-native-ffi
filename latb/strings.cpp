@@ -102,22 +102,21 @@ exports["take"] = [](const boxed& n_) -> boxed {
 // foreign import countPrefix :: (Char -> Boolean) ->  String -> Int
 //
 exports["countPrefix"] = [](const boxed& f_) -> boxed {
+  std::cout << "xxxxxxxxxxxxxxxxxxx" << std::endl;
+  auto b_ = f_(boxed('x'));
+  std::cout << "xxxxxxxxxxxxxxxxxxx" << std::endl;
+  bool b = unbox<bool>(f_(boxed("x")));
+  std::cout << "xxxxxxxxxxxxxxxxxxx" << std::endl;
+  std::cout << "xxxxxxxxxxxxxxxxxxx" << unbox<bool>(f_(boxed('x'))) << std::endl;
+  std::cout << "xxxxxxxxxxxxxxxxxxx" << unbox<bool>(f_(boxed("x"))) << std::endl;
   return [=](const boxed& s_) -> boxed {
     const string& s = unbox<string>(s_);
     size_t i = 0;
     while ( i<s.length() && unbox<bool>(f_(boxed(s.substr(i, 1)))) ) i++;
+    std::cout << "xxxxxxxxxxxxxxxxxxx" << i << std::endl;
     return i;
   };
 };
-/* PURS_FFI_FUNC_2(Data_String_CodeUnits_countPrefix, f, s0, { // only works with ASCII... */
-/*   const char * s = purs_any_get_string(s0); */
-/*   int i = 0; */
-/*   while ( i<strlen(s) && purs_any_is_true(purs_any_app(f, purs_any_char_new(s[i])))) { */
-/*     i++; */
-/*   } */
-/*   return purs_any_int_new(i); */
-/* }); */
-
 
 // foreign import _indexOf :: (forall a. a -> Maybe a) -> (forall a. Maybe a) -> Pattern -> String -> Maybe Int
 //
