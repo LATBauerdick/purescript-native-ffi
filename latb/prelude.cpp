@@ -9,6 +9,13 @@ exports["unsafeLog"] = [](const boxed& s_) -> boxed {
   std::cout << "TRACE: " << s << std::endl;
   return s;
 };
+
+// foreign import toCharCode :: Char -> Int
+exports["toCharCode"] = [](const boxed& c_) -> boxed {
+  const int i = unbox<string>(c_)[0];
+  return i;
+};
+
 FOREIGN_END
 
 FOREIGN_BEGIN( Control_Bind )

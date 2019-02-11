@@ -33,6 +33,7 @@ exports["replicate"] = [](const boxed& n_) -> boxed {
 //   -> f a
 //   -> Array a
 exports["fromFoldableImpl"] = [](const boxed& foldr_) -> boxed {
+  std::cout << "--> fromFoldableImpl "<< std::endl;
   return [=](const boxed& xs_) -> boxed {
     const auto& xs = unbox<array_t>(xs_);
     return foldr_(cons_)(array_t())(xs);

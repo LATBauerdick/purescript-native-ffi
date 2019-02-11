@@ -26,16 +26,6 @@ exports["replace"] = [](const boxed& s1) -> boxed {
 
 FOREIGN_END
 
-FOREIGN_BEGIN( Data_Char )
-
-// foreign import toCharCode :: Char -> Int
-exports["toCharCode"] = [](const boxed& c_) -> boxed {
-  const int i = unbox<string>(c_)[0];
-  return i;
-};
-
-FOREIGN_END
-
 FOREIGN_BEGIN( Data_String_CodeUnits )
 
 
@@ -97,23 +87,11 @@ exports["take"] = [](const boxed& n_) -> boxed {
   };
 };
 
-
-
-// foreign import countPrefix :: (Char -> Boolean) ->  String -> Int
-//
 exports["countPrefix"] = [](const boxed& f_) -> boxed {
-  std::cout << "xxxxxxxxxxxxxxxxxxx" << std::endl;
-  auto b_ = f_(boxed('x'));
-  std::cout << "xxxxxxxxxxxxxxxxxxx" << std::endl;
-  bool b = unbox<bool>(f_(boxed("x")));
-  std::cout << "xxxxxxxxxxxxxxxxxxx" << std::endl;
-  std::cout << "xxxxxxxxxxxxxxxxxxx" << unbox<bool>(f_(boxed('x'))) << std::endl;
-  std::cout << "xxxxxxxxxxxxxxxxxxx" << unbox<bool>(f_(boxed("x"))) << std::endl;
   return [=](const boxed& s_) -> boxed {
     const string& s = unbox<string>(s_);
     size_t i = 0;
     while ( i<s.length() && unbox<bool>(f_(boxed(s.substr(i, 1)))) ) i++;
-    std::cout << "xxxxxxxxxxxxxxxxxxx" << i << std::endl;
     return i;
   };
 };
